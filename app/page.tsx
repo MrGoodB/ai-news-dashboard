@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { NewsCard } from '@/components/NewsCard';
 import { NewsCardSkeleton } from '@/components/NewsCardSkeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SearchFilter } from '@/components/SearchFilter';
 import type { NewsItem, NewsResponse } from '@/types/news';
 
 export default function Home() {
@@ -12,6 +13,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
   const fetchNews = async () => {
     try {
@@ -39,6 +44,28 @@ export default function Home() {
     const interval = setInterval(fetchNews, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Get unique sources from news items
+  const availableSources = useMemo(() => {
+    const sourceSet = new Set(news.map(item => item.source));
+    return Array.from(sourceSet).sort();
+  }, [news]);
+
+  // Filter news based on search and source
+  const filteredNews = useMemo(() => {
+    return news.filter(item => {
+      const matchesSearch = !searchQuery || 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.source.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesSource = !selectedSource || item.source === selectedSource;
+      
+      return matchesSearch && matchesSource;
+    });
+  }, [news, searchQuery, selectedSource]);
+
+  const resultsCount = filteredNews.length;
+  const isFiltered = searchQuery || selectedSource;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -74,6 +101,14 @@ export default function Home() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Search & Filter */}
+        <SearchFilter
+          onSearch={setSearchQuery}
+          onFilterSource={setSelectedSource}
+          sources={availableSources}
+          selectedSource={selectedSource}
+        />
+
         {/* Source status */}
         {sources.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2">
@@ -97,6 +132,15 @@ export default function Home() {
           </div>
         )}
 
+        {/* Results count when filtered */}
+        {isFiltered && !loading && (
+          <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            Showing {resultsCount} {resultsCount === 1 ? 'result' : 'results'}
+            {searchQuery && <span> for &quot;{searchQuery}&quot;</span>}
+            {selectedSource && <span> from {selectedSource}</span>}
+          </div>
+        )}
+
         {error ? (
           <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 text-center">
             <p className="text-red-600 dark:text-red-400">{error}</p>
@@ -113,14 +157,31 @@ export default function Home() {
               ? Array.from({ length: 5 }).map((_, i) => (
                   <NewsCardSkeleton key={i} />
                 ))
-              : news.map((item) => <NewsCard key={item.id} item={item} />)}
+              : filteredNews.map((item) => <NewsCard key={item.id} item={item} />)}
           </div>
         )}
 
-        {!loading && !error && news.length === 0 && (
+        {!loading && !error && filteredNews.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">No AI news found right now</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Try refreshing in a few minutes</p>
+            {isFiltered ? (
+              <>
+                <p className="text-gray-500 dark:text-gray-400">No results match your filters</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedSource(null);
+                  }}
+                  className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Clear filters
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 dark:text-gray-400">No AI news found right now</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Try refreshing in a few minutes</p>
+              </>
+            )}
           </div>
         )}
       </main>

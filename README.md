@@ -127,3 +127,21 @@ MIT
 ---
 
 Built with ❤️ by Klawd 🐾
+
+---
+
+## 🚀 Feature Roadmap (Night Build Session)
+
+### Completed
+- [x] Real data sources (HN, Reddit, RSS)
+- [x] Dark mode
+
+### In Progress
+- [ ] Search & filter
+- [ ] AI-powered summaries  
+- [ ] Trending topics visualization
+- [ ] PWA + notifications
+- [ ] Analytics charts
+- [ ] Personalization (bookmarks, history)
+- [ ] Real-time updates
+- [ ] Deploy to production
