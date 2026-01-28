@@ -1,12 +1,36 @@
 // AI-related keywords to extract from titles
+// Prioritized for Claude, Agents, Productivity focus
 const AI_TERMS = new Set([
-  'ai', 'gpt', 'llm', 'chatgpt', 'claude', 'gemini', 'llama', 'mistral',
-  'openai', 'anthropic', 'google', 'meta', 'microsoft', 'nvidia', 'deepmind',
-  'transformer', 'diffusion', 'neural', 'machine learning', 'deep learning',
-  'nlp', 'vision', 'multimodal', 'rag', 'embedding', 'vector', 'agent',
-  'reasoning', 'benchmark', 'open source', 'fine-tune', 'training',
-  'inference', 'gpu', 'model', 'api', 'safety', 'alignment', 'agi',
-  'automation', 'copilot', 'assistant', 'robot', 'autonomous',
+  // Claude & Anthropic (highest priority)
+  'claude', 'anthropic', 'claude code', 'sonnet', 'opus', 'haiku',
+  
+  // Agents & Automation
+  'agent', 'agents', 'agentic', 'autonomous', 'automation', 'workflow',
+  'mcp', 'tool use', 'function calling', 'orchestration',
+  
+  // Productivity & Coding
+  'copilot', 'cursor', 'windsurf', 'codeium', 'tabnine', 'replit',
+  'productivity', 'coding assistant', 'code generation', 'ide',
+  
+  // Core AI/LLM terms
+  'ai', 'llm', 'gpt', 'chatgpt', 'openai', 'gemini', 'llama', 'mistral',
+  'transformer', 'neural', 'machine learning', 'deep learning',
+  
+  // Other major players
+  'google', 'meta', 'microsoft', 'nvidia', 'deepmind', 'hugging face',
+  
+  // Technical terms
+  'nlp', 'multimodal', 'rag', 'embedding', 'vector', 'fine-tune',
+  'context window', 'reasoning', 'benchmark', 'inference', 'training',
+  
+  // Emerging
+  'agi', 'alignment', 'safety', 'open source', 'local llm',
+]);
+
+// Terms that indicate HIGH relevance for Alex
+const HIGH_PRIORITY_TERMS = new Set([
+  'claude', 'anthropic', 'agent', 'agentic', 'productivity',
+  'claude code', 'mcp', 'automation', 'workflow', 'coding assistant',
 ]);
 
 // Common words to ignore
@@ -34,51 +58,84 @@ export interface TrendingTopic {
   term: string;
   count: number;
   weight: number; // 0-1 normalized
+  isHighPriority: boolean;
 }
 
 export function extractTrendingTopics(titles: string[]): TrendingTopic[] {
   const termCounts = new Map<string, number>();
+  const highPriorityMatches = new Set<string>();
 
   titles.forEach(title => {
-    const words = title.toLowerCase()
+    const lowerTitle = title.toLowerCase();
+    const words = lowerTitle
       .replace(/[^\w\s-]/g, ' ')
       .split(/\s+/)
       .filter(word => word.length > 2);
 
+    // Check for high priority compound terms first
+    HIGH_PRIORITY_TERMS.forEach(term => {
+      if (lowerTitle.includes(term)) {
+        const count = termCounts.get(term) || 0;
+        termCounts.set(term, count + 5); // High boost
+        highPriorityMatches.add(term);
+      }
+    });
+
+    // Check for compound AI terms
+    AI_TERMS.forEach(term => {
+      if (term.includes(' ') && lowerTitle.includes(term) && !highPriorityMatches.has(term)) {
+        const count = termCounts.get(term) || 0;
+        termCounts.set(term, count + 3);
+      }
+    });
+
     // Count individual words
     words.forEach(word => {
       if (STOP_WORDS.has(word)) return;
+      if (highPriorityMatches.has(word)) return; // Already counted
       
-      // Boost AI-related terms
       const count = termCounts.get(word) || 0;
-      const boost = AI_TERMS.has(word) ? 2 : 1;
+      const boost = HIGH_PRIORITY_TERMS.has(word) ? 4 : AI_TERMS.has(word) ? 2 : 1;
       termCounts.set(word, count + boost);
-    });
-
-    // Check for compound terms
-    const lowerTitle = title.toLowerCase();
-    AI_TERMS.forEach(term => {
-      if (term.includes(' ') && lowerTitle.includes(term)) {
-        const count = termCounts.get(term) || 0;
-        termCounts.set(term, count + 3); // Higher boost for compound matches
-      }
     });
   });
 
   // Sort by count and take top terms
   const sorted = Array.from(termCounts.entries())
-    .filter(([, count]) => count >= 2) // Minimum 2 occurrences
+    .filter(([, count]) => count >= 2)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15);
 
   if (sorted.length === 0) return [];
 
-  // Normalize weights
   const maxCount = sorted[0][1];
   
   return sorted.map(([term, count]) => ({
-    term: term.charAt(0).toUpperCase() + term.slice(1), // Capitalize
+    term: term.charAt(0).toUpperCase() + term.slice(1),
     count,
-    weight: Math.max(0.3, count / maxCount), // Min weight 0.3
+    weight: Math.max(0.3, count / maxCount),
+    isHighPriority: HIGH_PRIORITY_TERMS.has(term.toLowerCase()),
   }));
+}
+
+// Check if a title is relevant for AI news
+export function isAIRelated(title: string): boolean {
+  const lower = title.toLowerCase();
+  return Array.from(AI_TERMS).some(keyword => lower.includes(keyword));
+}
+
+// Score relevance (higher = more relevant to Alex's interests)
+export function scoreRelevance(title: string): number {
+  const lower = title.toLowerCase();
+  let score = 0;
+  
+  HIGH_PRIORITY_TERMS.forEach(term => {
+    if (lower.includes(term)) score += 10;
+  });
+  
+  AI_TERMS.forEach(term => {
+    if (lower.includes(term)) score += 2;
+  });
+  
+  return score;
 }

@@ -2,6 +2,7 @@ import type { NewsItem } from '@/types/news';
 import { fetchHackerNews } from './hackernews';
 import { fetchReddit } from './reddit';
 import { fetchRSSFeeds } from './rss';
+import { scoreRelevance } from '../utils/keywords';
 
 export interface AggregatedNews {
   items: NewsItem[];
@@ -54,9 +55,14 @@ export async function aggregateNews(limit: number = 20): Promise<AggregatedNews>
     return true;
   });
 
-  // Sort: hot items first, then by date
+  // Sort: relevance first, then hot items, then by date
   const sorted = uniqueItems.sort((a, b) => {
-    // Hot items first
+    // Relevance score (Claude, Agents, Productivity get priority)
+    const relevanceA = scoreRelevance(a.title);
+    const relevanceB = scoreRelevance(b.title);
+    if (relevanceA !== relevanceB) return relevanceB - relevanceA;
+    
+    // Hot items next
     if (a.isHot && !b.isHot) return -1;
     if (!a.isHot && b.isHot) return 1;
     

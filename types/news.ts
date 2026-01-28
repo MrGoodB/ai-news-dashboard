@@ -13,6 +13,7 @@ export interface TrendingTopic {
   term: string;
   count: number;
   weight: number;
+  isHighPriority?: boolean;
 }
 
 export interface NewsResponse {

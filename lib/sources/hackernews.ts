@@ -1,14 +1,7 @@
 import type { NewsItem } from '@/types/news';
+import { isAIRelated, scoreRelevance } from '../utils/keywords';
 
 const HN_API = 'https://hacker-news.firebaseio.com/v0';
-const AI_KEYWORDS = [
-  'ai', 'artificial intelligence', 'machine learning', 'ml', 'llm', 'gpt',
-  'claude', 'anthropic', 'openai', 'chatgpt', 'gemini', 'llama', 'mistral',
-  'transformer', 'neural', 'deep learning', 'nlp', 'computer vision',
-  'diffusion', 'stable diffusion', 'midjourney', 'generative', 'agi',
-  'copilot', 'hugging face', 'pytorch', 'tensorflow', 'langchain',
-  'vector', 'embedding', 'rag', 'fine-tune', 'prompt', 'agent'
-];
 
 interface HNStory {
   id: number;
@@ -17,11 +10,6 @@ interface HNStory {
   time: number;
   score: number;
   by: string;
-}
-
-function isAIRelated(title: string): boolean {
-  const lower = title.toLowerCase();
-  return AI_KEYWORDS.some(keyword => lower.includes(keyword));
 }
 
 export async function fetchHackerNews(limit: number = 10): Promise<NewsItem[]> {
@@ -56,7 +44,7 @@ export async function fetchHackerNews(limit: number = 10): Promise<NewsItem[]> {
       url: story.url || `https://news.ycombinator.com/item?id=${story.id}`,
       source: 'Hacker News',
       date: new Date(story.time * 1000).toISOString().split('T')[0],
-      isHot: story.score > 200,
+      isHot: story.score > 200 || scoreRelevance(story.title) > 15,
       score: story.score,
     }));
   } catch (error) {
