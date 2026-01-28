@@ -9,6 +9,7 @@ import { TrendingTopics } from '@/components/TrendingTopics';
 import { BookmarksPanel } from '@/components/BookmarksPanel';
 import { StatsBar } from '@/components/StatsBar';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
 import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts';
 import type { NewsItem, NewsResponse, TrendingTopic } from '@/types/news';
@@ -282,6 +283,9 @@ export default function Home() {
 
       {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp />
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

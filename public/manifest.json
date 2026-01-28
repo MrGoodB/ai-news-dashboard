@@ -1,0 +1,33 @@
+{
+  "name": "AI News Dashboard",
+  "short_name": "AI News",
+  "description": "Live AI news from HN, Reddit & AI blogs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["news", "technology"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Refresh News",
+      "url": "/",
+      "description": "Get latest AI news"
+    }
+  ]
+}
