@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { aggregateNews } from '@/lib/sources';
+import { extractTrendingTopics } from '@/lib/utils/keywords';
 import type { NewsResponse } from '@/types/news';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,14 @@ export async function GET(): Promise<NextResponse<NewsResponse>> {
   try {
     const news = await aggregateNews(20);
     
-    return NextResponse.json(news, {
+    // Extract trending topics from titles
+    const titles = news.items.map(item => item.title);
+    const trending = extractTrendingTopics(titles);
+    
+    return NextResponse.json({
+      ...news,
+      trending,
+    }, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },
@@ -21,6 +29,7 @@ export async function GET(): Promise<NextResponse<NewsResponse>> {
       {
         items: [],
         sources: [],
+        trending: [],
         fetchedAt: new Date().toISOString(),
       },
       { status: 500 }

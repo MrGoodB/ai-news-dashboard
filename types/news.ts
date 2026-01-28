@@ -8,6 +8,12 @@ export interface NewsItem {
   score?: number;
 }
 
+export interface TrendingTopic {
+  term: string;
+  count: number;
+  weight: number;
+}
+
 export interface NewsResponse {
   items: NewsItem[];
   sources: {
@@ -15,5 +21,6 @@ export interface NewsResponse {
     count: number;
     status: 'ok' | 'error';
   }[];
+  trending: TrendingTopic[];
   fetchedAt: string;
 }

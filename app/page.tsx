@@ -5,11 +5,13 @@ import { NewsCard } from '@/components/NewsCard';
 import { NewsCardSkeleton } from '@/components/NewsCardSkeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchFilter } from '@/components/SearchFilter';
-import type { NewsItem, NewsResponse } from '@/types/news';
+import { TrendingTopics } from '@/components/TrendingTopics';
+import type { NewsItem, NewsResponse, TrendingTopic } from '@/types/news';
 
 export default function Home() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [sources, setSources] = useState<NewsResponse['sources']>([]);
+  const [trending, setTrending] = useState<TrendingTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export default function Home() {
       const data: NewsResponse = await response.json();
       setNews(data.items);
       setSources(data.sources);
+      setTrending(data.trending || []);
       setLastUpdated(data.fetchedAt);
       setError(null);
     } catch (err) {
@@ -63,6 +66,11 @@ export default function Home() {
       return matchesSearch && matchesSource;
     });
   }, [news, searchQuery, selectedSource]);
+
+  const handleTopicClick = (topic: string) => {
+    setSearchQuery(topic);
+    setSelectedSource(null);
+  };
 
   const resultsCount = filteredNews.length;
   const isFiltered = searchQuery || selectedSource;
@@ -101,6 +109,15 @@ export default function Home() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Trending Topics */}
+        {!loading && trending.length > 0 && (
+          <TrendingTopics
+            topics={trending}
+            onTopicClick={handleTopicClick}
+            activeTopic={searchQuery}
+          />
+        )}
+
         {/* Search & Filter */}
         <SearchFilter
           onSearch={setSearchQuery}
