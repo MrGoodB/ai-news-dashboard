@@ -35,7 +35,7 @@ function parseRSSItem(xml: string, feedName: string): NewsItem | null {
     }
 
     return {
-      id: `rss-${feedName.toLowerCase().replace(/\s+/g, '-')}-${Buffer.from(link).toString('base64').slice(0, 10)}`,
+      id: `rss-${feedName.toLowerCase().replace(/\s+/g, '-')}-${btoa(link).slice(0, 10)}`,
       title: title.trim(),
       url: link.trim(),
       source: feedName,
@@ -50,7 +50,6 @@ function parseRSSItem(xml: string, feedName: string): NewsItem | null {
 async function fetchFeed(feed: RSSFeed): Promise<NewsItem[]> {
   try {
     const res = await fetch(feed.url, {
-      next: { revalidate: 1800 }, // Cache for 30 min
       headers: {
         'User-Agent': 'AI-News-Dashboard/1.0',
       },

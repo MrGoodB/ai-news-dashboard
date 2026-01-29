@@ -55,9 +55,7 @@ export async function fetchArxiv(limit: number = 10): Promise<NewsItem[]> {
     const categoryQuery = CATEGORIES.map(c => `cat:${c}`).join('+OR+');
     const url = `${ARXIV_API}?search_query=${categoryQuery}&sortBy=submittedDate&sortOrder=descending&max_results=50`;
 
-    const response = await fetch(url, {
-      next: { revalidate: 3600 }, // Cache for 1 hour (papers don't change often)
-    });
+    const response = await fetch(url);
 
     if (!response.ok) return [];
 

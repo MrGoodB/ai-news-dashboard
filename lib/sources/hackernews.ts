@@ -15,9 +15,7 @@ interface HNStory {
 export async function fetchHackerNews(limit: number = 10): Promise<NewsItem[]> {
   try {
     // Get top stories
-    const topStoriesRes = await fetch(`${HN_API}/topstories.json`, {
-      next: { revalidate: 300 } // Cache for 5 min
-    });
+    const topStoriesRes = await fetch(`${HN_API}/topstories.json`);
     const topStoryIds: number[] = await topStoriesRes.json();
 
     // Fetch story details (first 100 to find AI-related ones)

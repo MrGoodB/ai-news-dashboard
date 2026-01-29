@@ -41,7 +41,6 @@ export async function fetchReddit(limit: number = 10): Promise<NewsItem[]> {
             headers: {
               'User-Agent': 'AI-News-Dashboard/1.0',
             },
-            next: { revalidate: 300 }, // Cache for 5 min
           }
         );
         
