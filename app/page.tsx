@@ -14,6 +14,8 @@ import { NewArticlesToast } from '@/components/NewArticlesToast';
 import { useNewArticles } from '@/lib/hooks/useNewArticles';
 import { useReadHistory } from '@/lib/hooks/useReadHistory';
 import { Greeting } from '@/components/Greeting';
+import { QuickActions } from '@/components/QuickActions';
+import { TimePeriodTabs, type TimePeriod } from '@/components/TimePeriodTabs';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
 import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts';
 import type { NewsItem, NewsResponse, TrendingTopic } from '@/types/news';
@@ -29,6 +31,7 @@ export default function Home() {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   
   // Bookmarks
   const { bookmarks, toggleBookmark, isBookmarked, removeBookmark, clearAll, count: bookmarkCount } = useBookmarks();
@@ -96,7 +99,31 @@ export default function Home() {
     return Array.from(sourceSet).sort();
   }, [news]);
 
-  // Filter news based on search and source
+  // Helper to check if date is within period
+  const isWithinPeriod = (dateStr: string, period: TimePeriod): boolean => {
+    if (period === 'all') return true;
+    const itemDate = new Date(dateStr);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (period === 'today') {
+      return itemDate >= today;
+    }
+    if (period === 'week') {
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return itemDate >= weekAgo;
+    }
+    return true;
+  };
+
+  // Count items by period
+  const periodCounts = useMemo(() => ({
+    all: news.length,
+    today: news.filter(item => isWithinPeriod(item.date, 'today')).length,
+    week: news.filter(item => isWithinPeriod(item.date, 'week')).length,
+  }), [news]);
+
+  // Filter news based on search, source, and time period
   const filteredNews = useMemo(() => {
     return news.filter(item => {
       const matchesSearch = !searchQuery || 
@@ -104,10 +131,16 @@ export default function Home() {
         item.source.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesSource = !selectedSource || item.source === selectedSource;
+      const matchesPeriod = isWithinPeriod(item.date, timePeriod);
       
-      return matchesSearch && matchesSource;
+      return matchesSearch && matchesSource && matchesPeriod;
     });
-  }, [news, searchQuery, selectedSource]);
+  }, [news, searchQuery, selectedSource, timePeriod]);
+
+  // Hot items for quick actions
+  const hotItems = useMemo(() => 
+    filteredNews.filter(item => item.isHot),
+  [filteredNews]);
 
   const handleTopicClick = (topic: string) => {
     setSearchQuery(topic);
@@ -115,7 +148,7 @@ export default function Home() {
   };
 
   const resultsCount = filteredNews.length;
-  const isFiltered = searchQuery || selectedSource;
+  const isFiltered = searchQuery || selectedSource || timePeriod !== 'all';
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -178,6 +211,32 @@ export default function Home() {
             topics={trending}
             onTopicClick={handleTopicClick}
             activeTopic={searchQuery}
+          />
+        )}
+
+        {/* Time Period Tabs */}
+        {!loading && news.length > 0 && (
+          <TimePeriodTabs
+            selected={timePeriod}
+            onChange={setTimePeriod}
+            counts={periodCounts}
+          />
+        )}
+
+        {/* Quick Actions */}
+        {!loading && (
+          <QuickActions
+            hotItems={hotItems}
+            onShareDigest={async () => {
+              try {
+                const res = await fetch('/api/digest');
+                const data = await res.json();
+                await navigator.clipboard.writeText(data.formatted);
+                alert('Digest copied to clipboard!');
+              } catch {
+                alert('Failed to generate digest');
+              }
+            }}
           />
         )}
 
